@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Exhibit search mockup</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+  :root {
+    --surface-2: #ffffff;
+    --surface-1: #f3f2ee;
+    --surface-0: #fbfaf7;
+    --text-primary: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-muted: #8a8983;
+    --text-accent: #0c447c;
+    --bg-accent: #e6f1fb;
+    --bg-highlight: rgba(250, 199, 117, 0.5);
+    --border: #ddd9cf;
+    --border-strong: #c3bfb2;
+    --border-accent: #378add;
+    --radius: 8px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--surface-0);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 2rem 1.5rem;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  input[type="text"] {
+    height: 36px;
+    width: 100%;
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border-strong);
+    background: var(--surface-2);
+    color: var(--text-primary);
+    font-size: 14px;
+    padding: 0 12px;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--border-accent);
+  }
+  button {
+    font-family: var(--font-sans);
+    background: transparent;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: var(--surface-1); }
+  button:disabled { opacity: 0.4; cursor: default; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 style="font-size: 18px; font-weight: 500; margin: 0 0 1.25rem;">Exhibits</h1>
+
+  <div style="position: relative; margin-bottom: 1rem;">
+    <i class="ti ti-search" aria-hidden="true" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text-muted);"></i>
+    <input id="q" type="text" placeholder="Search exhibits by title, subtitle, or description" autocomplete="off" style="padding-left: 36px;" />
+  </div>
+
+  <div id="tags" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem;"></div>
+
+  <div id="count" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;"></div>
+  <div id="results"></div>
+  <div id="pager" style="display: flex; align-items: center; justify-content: center; gap: 12px; padding-top: 1rem;"></div>
+  <div id="empty" style="display: none; padding: 2rem 0; text-align: center;">
+    <p style="color: var(--text-secondary); margin: 0 0 8px;">No exhibits found.</p>
+    <button id="clear-btn" type="button">Clear search and filters</button>
+  </div>
+</div>
+
+<script>
+const EXHIBITS = [
+  {t:"Mapping the Silk Road", s:"Trade routes across Central Asia, 200 BCE-1400 CE", d:"An exploration of the trade networks connecting East and West through maps, ledgers, and traveler accounts.", tags:["maps","history"]},
+  {t:"The Botanical Notebooks", s:"Field sketches of a 19th century naturalist", d:"Watercolor studies and pressed specimens documenting plant life across three continents.", tags:["science","art"]},
+  {t:"City in Motion", s:"Street photography, 1960-1980", d:"Candid images capturing the rhythm of urban life through two decades of change.", tags:["photography"]},
+  {t:"Illuminated Pages", s:"Medieval manuscripts and their makers", d:"A close look at the scribes, pigments, and workshops behind illuminated devotional texts.", tags:["manuscripts","art"]},
+  {t:"Charting the Stars", s:"Astronomical instruments and observation logs", d:"Instruments, star charts, and logbooks tracing how astronomers measured the sky before computers.", tags:["science","maps"]},
+  {t:"Protest and Print", s:"Political posters of the 20th century", d:"Graphic design as activism, from suffrage campaigns to civil rights movements.", tags:["art","history"]},
+  {t:"Voices of the Delta", s:"Oral histories from the Mississippi region", d:"Recorded interviews and transcripts preserving stories of migration and community.", tags:["history"]},
+  {t:"Glass and Light", s:"A century of stained glass design", d:"Studio drawings and photographs documenting the craft of architectural glasswork.", tags:["art","photography"]},
+  {t:"Fieldwork", s:"Expedition photography from the Arctic", d:"Images from three research expeditions studying ice movement and wildlife.", tags:["photography","science"]},
+  {t:"Hands at Work", s:"Documenting craft traditions", d:"Photo essays on weaving, pottery, and metalwork traditions passed through generations.", tags:["photography","history"]},
+  {t:"Shadows and Structures", s:"Architectural photography of forgotten buildings", d:"A survey of abandoned mills, stations, and factories through large-format photography.", tags:["photography","art"]},
+  {t:"The Cartographer's Eye", s:"Hand-drawn maps of coastal trade cities", d:"Detailed harbor maps and surveyor's notes from port cities across four centuries.", tags:["maps","art"]},
+  {t:"Seeds of Change", s:"Agricultural science through the 20th century", d:"Experiment station records tracing the shift to industrial farming methods.", tags:["science","history"]},
+  {t:"Ink and Parchment", s:"The evolution of bookbinding techniques", d:"Tools, samples, and workshop notes documenting centuries of bookbinding craft.", tags:["manuscripts","art"]},
+  {t:"Migratory Patterns", s:"Bird tracking data and field journals", d:"Decades of banding records and field journals tracking seasonal migration routes.", tags:["science","maps"]},
+  {t:"The People's Press", s:"Independent publishing and zine culture", d:"Self-published pamphlets, zines, and broadsides from grassroots print communities.", tags:["art","history"]},
+  {t:"Threads of Memory", s:"Textile art from immigrant communities", d:"Quilts, embroidery, and weaving that carry family histories across generations.", tags:["art","history"]},
+  {t:"Beneath the Surface", s:"Underwater archaeology expeditions", d:"Dive logs and recovered artifacts from shipwreck and coastal survey expeditions.", tags:["science","photography"]},
+  {t:"The Reading Room", s:"A history of public libraries", d:"Photographs and records tracing the growth of the public library movement.", tags:["history","manuscripts"]},
+  {t:"Windows to the Past", s:"Stained glass restoration case studies", d:"Before-and-after documentation from a decade of stained glass conservation work.", tags:["art","science"]}
+];
+const ALL_TAGS = [...new Set(EXHIBITS.flatMap(e => e.tags))].sort();
+let activeTags = new Set();
+let currentPage = 1;
+const PAGE_SIZE = 5;
+
+const tagsEl = document.getElementById('tags');
+ALL_TAGS.forEach(tag => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = tag;
+  btn.style.cssText = 'padding: 4px 12px; font-size: 13px; border-radius: 999px;';
+  btn.onclick = () => {
+    if (activeTags.has(tag)) activeTags.delete(tag); else activeTags.add(tag);
+    currentPage = 1;
+    render();
+  };
+  btn.dataset.tag = tag;
+  tagsEl.appendChild(btn);
+});
+
+function styleTagButtons() {
+  [...tagsEl.children].forEach(btn => {
+    const on = activeTags.has(btn.dataset.tag);
+    btn.style.background = on ? 'var(--bg-accent)' : 'transparent';
+    btn.style.color = on ? 'var(--text-accent)' : 'var(--text-secondary)';
+    btn.style.border = on ? '0.5px solid var(--border-accent)' : '0.5px solid var(--border-strong)';
+  });
+}
+
+function matches(e, q) {
+  const tagMatch = activeTags.size === 0 || e.tags.some(t => activeTags.has(t));
+  if (!tagMatch) return false;
+  if (!q) return true;
+  const ql = q.toLowerCase();
+  return e.t.toLowerCase().includes(ql) || e.s.toLowerCase().includes(ql) || e.d.toLowerCase().includes(ql);
+}
+
+function tier(e, q) {
+  const ql = q.toLowerCase();
+  const t = e.t.toLowerCase();
+  if (t.startsWith(ql)) return 0;
+  if (t.includes(ql)) return 1;
+  if (e.s.toLowerCase().includes(ql)) return 2;
+  return 3;
+}
+
+function highlight(text, q) {
+  if (!q) return text;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i === -1) return text;
+  return text.slice(0, i) + '<mark style="background: var(--bg-highlight); color: inherit;">' + text.slice(i, i + q.length) + '</mark>' + text.slice(i + q.length);
+}
+
+function rowHtml(e, q) {
+  return '<div style="display: flex; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--border);">' +
+    '<div style="width: 56px; height: 56px; flex-shrink: 0; border-radius: var(--radius); background: var(--surface-1); display: flex; align-items: center; justify-content: center; color: var(--text-muted);"><i class="ti ti-photo" aria-hidden="true" style="font-size: 20px;"></i></div>' +
+    '<div style="min-width: 0;">' +
+      '<p style="font-size: 15px; font-weight: 500; margin: 0 0 2px; color: var(--text-accent);">' + highlight(e.t, q) + '</p>' +
+      '<p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 4px;">' + highlight(e.s, q) + '</p>' +
+      '<p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 6px; line-height: 1.5;">' + highlight(e.d, q) + '</p>' +
+      '<div style="display: flex; gap: 6px; flex-wrap: wrap;">' + e.tags.map(t => '<span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--surface-1); color: var(--text-secondary);">' + t + '</span>').join('') + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function render() {
+  const q = document.getElementById('q').value.trim();
+  let filtered = EXHIBITS.filter(e => matches(e, q));
+  if (q) {
+    filtered = filtered.map((e, i) => ({e, i})).sort((a, b) => tier(a.e, q) - tier(b.e, q) || a.i - b.i).map(x => x.e);
+  }
+  styleTagButtons();
+
+  const resultsEl = document.getElementById('results');
+  const emptyEl = document.getElementById('empty');
+  const countEl = document.getElementById('count');
+  const pagerEl = document.getElementById('pager');
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  currentPage = Math.min(currentPage, totalPages);
+  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  if (filtered.length === 0) {
+    resultsEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    countEl.textContent = '';
+    pagerEl.innerHTML = '';
+  } else {
+    resultsEl.style.display = 'block';
+    emptyEl.style.display = 'none';
+    countEl.textContent = filtered.length + (filtered.length === 1 ? ' exhibit' : ' exhibits') + (q ? ' (sorted by match)' : '');
+    resultsEl.innerHTML = pageItems.map(e => rowHtml(e, q)).join('');
+
+    pagerEl.innerHTML = '';
+    if (totalPages > 1) {
+      const prev = document.createElement('button');
+      prev.type = 'button';
+      prev.textContent = 'Previous';
+      prev.disabled = currentPage === 1;
+      prev.onclick = () => { currentPage -= 1; render(); };
+      const label = document.createElement('span');
+      label.style.cssText = 'font-size: 13px; color: var(--text-secondary);';
+      label.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+      const next = document.createElement('button');
+      next.type = 'button';
+      next.textContent = 'Next';
+      next.disabled = currentPage === totalPages;
+      next.onclick = () => { currentPage += 1; render(); };
+      pagerEl.append(prev, label, next);
+    }
+  }
+}
+
+document.getElementById('q').addEventListener('input', () => { currentPage = 1; render(); });
+document.getElementById('clear-btn').addEventListener('click', () => {
+  document.getElementById('q').value = '';
+  activeTags.clear();
+  currentPage = 1;
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
